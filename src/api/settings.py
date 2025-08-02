@@ -1,5 +1,4 @@
-from pydantic import BaseSettings
-
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     data_path: str = "data/user_tool_interactions.csv"
