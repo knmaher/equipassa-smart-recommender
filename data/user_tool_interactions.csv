@@ -1,0 +1,7 @@
+user_id,tool_id,usage_count
+U1,T1,3
+U1,T3,1
+U2,T1,2
+U2,T2,5
+U3,T2,2
+U3,T3,4

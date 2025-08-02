@@ -6,19 +6,19 @@ from src.api.settings import Settings
 
 def create_app() -> FastAPI:
     settings = Settings()
-    app = FastAPI(
+    equipassa = FastAPI(
         title="Equipassa Smart Recommender",
         version="0.1.0",
         description="User-based CF mit Cosine Similarity"
     )
-    app.add_middleware(
+    equipassa.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
         allow_methods=["GET"],
         allow_headers=["*"],
     )
-    app.include_router(recommend_router)
-    return app
+    equipassa.include_router(recommend_router)
+    return equipassa
 
 
 app = create_app()

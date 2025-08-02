@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 import pandas as pd
 from src.recommender import CosineRecommender, build_interaction_matrix
 from src.api.settings import Settings
@@ -8,7 +8,8 @@ router = APIRouter(prefix="/recommend", tags=["recommend"])
 
 
 @router.on_event("startup")
-async def load_recommender(settings: Settings = Depends()):
+async def load_recommender():
+    settings = Settings()
     df = pd.read_csv(settings.data_path)
     R, user_ids, tool_ids = build_interaction_matrix(df)
     router.recommender = CosineRecommender(R, user_ids, tool_ids)
