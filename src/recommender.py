@@ -1,48 +1,50 @@
-import pandas as pd
+"""
+Recommender-Modul: baut die Interaktionsmatrix und liefert Cosine-CF-Empfehlungen.
+"""
+from typing import List, Tuple
 import numpy as np
-from typing import Tuple, List
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 def build_interaction_matrix(
-    df: pd.DataFrame,
-    user_col: str = "user_id",
-    item_col: str = "tool_id",
-    value_col: str = "usage_count"
+    df: pd.DataFrame
 ) -> Tuple[np.ndarray, List[str], List[str]]:
-    """
-    Builds a user-item interaction matrix from a long-form DataFrame.
-
-    Args:
-        df (pd.DataFrame): Input DataFrame with user-item interactions.
-        user_col (str): Column name for user identifiers. Default: 'user_id'.
-        item_col (str): Column name for item (tool) identifiers. Default: 'tool_id'.
-        value_col (str): Column name for interaction values. Default: 'usage_count'.
-
-    Returns:
-        R (np.ndarray): 2D array of shape (n_users, n_items). Rows correspond to users, columns to items.
-        user_ids (List[str]): Ordered list of user identifiers for each row.
-        item_ids (List[str]): Ordered list of item identifiers for each column.
-
-    Raises:
-        ValueError: If the DataFrame is missing any of the required columns.
-    """
-    # Überprüfen, ob alle Spalten vorhanden sind
-    required = {user_col, item_col, value_col}
+    required = {"user_id", "tool_id", "usage_count"}
     if not required.issubset(df.columns):
         missing = required - set(df.columns)
-        raise ValueError(f"DataFrame is missing required columns: {missing}")
-
-    # Pivotieren der Daten
-    interaction_df = df.pivot_table(
-        index=user_col,
-        columns=item_col,
-        values=value_col,
-        fill_value=0
+        raise ValueError(f"Missing columns: {missing}")
+    R_df = df.pivot_table(
+        index="user_id", columns="tool_id",
+        values="usage_count", fill_value=0
     )
+    return R_df.values, list(R_df.index), list(R_df.columns)
 
-    # IDs und Matrix extrahieren
-    user_ids = interaction_df.index.tolist()
-    item_ids = interaction_df.columns.tolist()
-    R = interaction_df.to_numpy()
 
-    return R, user_ids, item_ids
+class CosineRecommender:
+    def __init__(
+        self,
+        R: np.ndarray,
+        user_ids: List[str],
+        tool_ids: List[str]
+    ):
+        self.R = R
+        self.user_ids = user_ids
+        self.tool_ids = tool_ids
+        self.sim = cosine_similarity(R)
+
+    def recommend(
+        self,
+        user_id: str,
+        top_k: int = 5
+    ) -> List[Tuple[str, float]]:
+        if user_id not in self.user_ids:
+            raise ValueError(f"Unknown user_id {user_id}")
+        u = self.user_ids.index(user_id)
+        scores = self.sim[u].copy()
+        scores[u] = 0
+        scores = scores @ self.R
+        used = self.R[u] > 0
+        scores[used] = -1
+        idx = np.argsort(-scores)[:top_k]
+        return [(self.tool_ids[i], float(scores[i])) for i in idx]
