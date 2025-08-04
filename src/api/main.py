@@ -5,7 +5,7 @@ from src.api.settings import Settings
 
 
 def create_app() -> FastAPI:
-    settings = Settings()
+    Settings()
     equipassa = FastAPI(
         title="Equipassa Smart Recommender",
         version="0.1.0",
